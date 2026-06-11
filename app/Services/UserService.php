@@ -27,7 +27,7 @@ class UserService extends AbstractService
 
     public function afterSave($entity, array $params)
     {
-        dispatch(new UserCreated($entity));
+        event(new UserCreated($entity));
 
         return $entity;
     }

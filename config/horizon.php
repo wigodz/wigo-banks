@@ -210,6 +210,21 @@ return [
             'timeout' => 60,
             'nice' => 0,
         ],
+
+        // Dedicated single-worker queue for the login/two-factor flow, so
+        // only one listener (e.g. SendTwoFactorCodeNotification) runs at a time.
+        'supervisor-login' => [
+            'connection' => 'redis',
+            'queue' => ['login'],
+            'balance' => 'simple',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 1,
+            'timeout' => 60,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [

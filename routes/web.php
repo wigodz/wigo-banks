@@ -11,6 +11,9 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthController::class, 'login'])->name('login.store');
     Route::post('register', [AuthController::class, 'register'])->name('register.store');
+
+    Route::get('two-factor-challenge', [AuthController::class, 'twoFactorChallenge'])->name('two-factor.challenge');
+    Route::post('two-factor-challenge', [AuthController::class, 'confirmTwoFactor'])->name('two-factor.confirm');
 });
 
 Route::middleware('auth')->group(function () {
