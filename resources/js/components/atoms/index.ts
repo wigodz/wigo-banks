@@ -10,3 +10,4 @@ export * from '@/components/ui/label';
 export * from '@/components/ui/separator';
 export * from '@/components/ui/skeleton';
 export * from '@/components/ui/spinner';
+export * from './icons';

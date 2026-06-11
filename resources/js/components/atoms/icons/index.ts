@@ -1,0 +1,7 @@
+export { default as IconArrowDown } from './IconArrowDown.vue';
+export { default as IconArrowDownCircle } from './IconArrowDownCircle.vue';
+export { default as IconArrowUp } from './IconArrowUp.vue';
+export { default as IconArrowUpCircle } from './IconArrowUpCircle.vue';
+export { default as IconDollar } from './IconDollar.vue';
+export { default as IconExchange } from './IconExchange.vue';
+export { default as IconPlus } from './IconPlus.vue';
