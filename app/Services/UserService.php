@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Abstracts\AbstractService;
+use App\Events\UserCreated;
 use App\Models\User;
 use App\Repositories\UserRepository;
 
@@ -22,5 +23,12 @@ class UserService extends AbstractService
             'name' => $user->name,
             'email' => $user->email,
         ];
+    }
+
+    public function afterSave($entity, array $params)
+    {
+        dispatch(new UserCreated($entity));
+
+        return $entity;
     }
 }
