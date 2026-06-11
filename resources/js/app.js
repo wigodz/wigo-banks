@@ -31,5 +31,9 @@ initializeTheme();
 initializeFlashToast();
 
 // Persist the one-time OAuth token shared by the backend on each navigation...
-router.on('navigate', persistTokenFromPage);
-persistTokenFromPage();
+// (client-side only: usePage() has no props during SSR module warm-up, and
+// localStorage doesn't exist in the SSR runtime)
+if (typeof window !== 'undefined') {
+    router.on('navigate', persistTokenFromPage);
+    persistTokenFromPage();
+}

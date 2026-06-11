@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -11,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 class AuthService
 {
     public function __construct(
-        private readonly UserRepositoryInterface $users,
+        private readonly UserService $userService,
     ) {}
 
     /**
@@ -19,7 +18,7 @@ class AuthService
      */
     public function register(array $data): array
     {
-        $user = $this->users->create([
+        $user = $this->userService->save([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
@@ -38,7 +37,7 @@ class AuthService
      */
     public function login(array $credentials, bool $remember = false): array
     {
-        $user = $this->users->findByEmail($credentials['email']);
+        $user = $this->userService->findOneWhere(['email' => $credentials['email']]);
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([

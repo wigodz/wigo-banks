@@ -2,18 +2,13 @@
 
 namespace App\Repositories;
 
+use App\Abstracts\AbstractRepository;
 use App\Models\User;
-use App\Repositories\Contracts\UserRepositoryInterface;
 
-class UserRepository implements UserRepositoryInterface
+class UserRepository extends AbstractRepository
 {
-    public function findByEmail(string $email): ?User
+    public function __construct(User $model)
     {
-        return User::where('email', $email)->first();
-    }
-
-    public function create(array $data): User
-    {
-        return User::create($data);
+        $this->model = $model;
     }
 }

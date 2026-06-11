@@ -2,17 +2,25 @@
 
 namespace App\Services;
 
+use App\Abstracts\AbstractService;
 use App\Models\User;
-use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\UserRepository;
 
-class UserService
+class UserService extends AbstractService
 {
-    public function __construct(
-        private readonly UserRepositoryInterface $users,
-    ) {}
-
-    public function getAuthenticatedUser(User $user): User
+    public function __construct(UserRepository $repository)
     {
-        return $this->users->findByEmail($user->email);
+        $this->repository = $repository;
+    }
+
+    public function getAuthenticatedUser(User $user, array $with = []): array
+    {
+        $user = $this->findOneWhere(['email' => $user->email], $with);
+
+        return [
+            'hash' => $user->hash,
+            'name' => $user->name,
+            'email' => $user->email,
+        ];
     }
 }

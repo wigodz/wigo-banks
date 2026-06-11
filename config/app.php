@@ -107,6 +107,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Hash ID Key
+    |--------------------------------------------------------------------------
+    |
+    | Salt used to generate the public `hash` column of each table via
+    | App\Common\Traits\HashIdsModel. Combined with the table name so that
+    | hashes are unique per table.
+    |
+    */
+
+    'hash_id_key' => env('HASH_ID_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |
