@@ -58,6 +58,33 @@ class WalletService extends AbstractService
         ];
     }
 
+    public function getTransactions(User $user): array
+    {
+        $transactions = $this->repository->getLatestTransactions($user->id);
+
+        return [
+            'transactions' => $transactions->map(fn (FinancialStatement $statement) => [
+                'hash' => $statement->hash,
+                'amount' => $statement->amount,
+                'type' => $statement->type,
+                'operation_type' => $statement->operation_type->label(),
+                'receiver' => $statement->receiver->name,
+                'created_at' => $statement->created_at,
+            ])->all(),
+        ];
+    }
+
+    public function deposit(User $user, int $amount): FinancialStatement
+    {
+        return $this->save([
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'amount' => $amount,
+        ]);
+    }
+
     public function requestWithdrawal(User $user, int $amount): void
     {
         $balance = $this->repository->getBalance($user->id);

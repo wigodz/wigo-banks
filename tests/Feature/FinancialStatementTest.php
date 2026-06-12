@@ -90,6 +90,6 @@ class FinancialStatementTest extends TestCase
     {
         $response = $this->getJson('/financial-statements');
 
-        $response->assertRedirect(route('login'));
+        $response->assertUnauthorized();
     }
 }

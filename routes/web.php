@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::get('wallet/balance', [WalletController::class, 'balance'])->name('wallet.balance');
     Route::get('wallet/balance-history', [WalletController::class, 'balanceHistory'])->name('wallet.balance-history');
     Route::get('wallet/summary', [WalletController::class, 'summary'])->name('wallet.summary');
+    Route::get('wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
+    Route::post('wallet/deposits', [WalletController::class, 'deposit'])->name('wallet.deposits.store');
     Route::post('wallet/withdrawals', [WalletController::class, 'requestWithdrawal'])->name('wallet.withdrawals.store');
     Route::post('wallet/withdrawals/confirm', [WalletController::class, 'confirmWithdrawal'])->name('wallet.withdrawals.confirm');
 

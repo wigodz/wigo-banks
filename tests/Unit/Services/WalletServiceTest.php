@@ -130,6 +130,67 @@ class WalletServiceTest extends TestCase
         ], $result);
     }
 
+    public function test_deposit_creates_a_financial_statement_for_the_user(): void
+    {
+        $user = User::factory()->create();
+
+        $statement = app(WalletService::class)->deposit($user, 1000);
+
+        $this->assertSame(OperationType::Deposit, $statement->operation_type);
+        $this->assertSame(MovementType::Positive, $statement->type);
+        $this->assertSame(1000, $statement->amount);
+        $this->assertSame($user->id, $statement->requester_id);
+        $this->assertSame($user->id, $statement->receiver_id);
+    }
+
+    public function test_get_transactions_returns_the_latest_transactions(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $other->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Withdrawal,
+            'type' => MovementType::Negative,
+            'amount' => 300,
+        ]);
+
+        $result = app(WalletService::class)->getTransactions($user);
+
+        $this->assertCount(2, $result['transactions']);
+        $this->assertSame(['hash', 'amount', 'type', 'operation_type', 'receiver', 'created_at'], array_keys($result['transactions'][0]));
+        $this->assertSame(300, $result['transactions'][0]['amount']);
+        $this->assertSame('Saque', $result['transactions'][0]['operation_type']);
+        $this->assertSame($user->name, $result['transactions'][0]['receiver']);
+    }
+
+    public function test_get_transactions_limits_results_to_ten(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        FinancialStatement::factory()->count(12)->create([
+            'requester_id' => $other->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 100,
+        ]);
+
+        $result = app(WalletService::class)->getTransactions($user);
+
+        $this->assertCount(10, $result['transactions']);
+    }
+
     public function test_request_withdrawal_dispatches_event_with_code_when_amount_is_valid(): void
     {
         Event::fake();

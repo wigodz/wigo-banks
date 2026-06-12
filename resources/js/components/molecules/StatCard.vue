@@ -18,7 +18,7 @@ defineProps<{
         </CardHeader>
         <CardContent>
             <Skeleton v-if="loading" class="h-10 w-40" />
-            <p v-else class="font-mono text-4xl font-bold tracking-tight text-foreground tabular-nums">
+            <p v-else class="truncate font-mono text-2xl font-bold tracking-tight text-foreground tabular-nums sm:text-3xl lg:text-4xl">
                 {{ value }}
             </p>
         </CardContent>

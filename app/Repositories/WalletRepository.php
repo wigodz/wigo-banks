@@ -45,4 +45,16 @@ class WalletRepository extends AbstractRepository
             ->where('created_at', '>=', $since)
             ->sum('amount');
     }
+
+    public function getLatestTransactions(int $userId, int $limit = 10): Collection
+    {
+        return $this->model->query()
+            ->where('requester_id', $userId)
+            ->orWhere('receiver_id', $userId)
+            ->with(['requester', 'receiver'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+    }
 }

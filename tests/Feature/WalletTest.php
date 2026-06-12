@@ -74,6 +74,68 @@ class WalletTest extends TestCase
         $response->assertJsonPath('data.sent', 300);
     }
 
+    public function test_authenticated_user_can_get_transactions(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $other->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $response = $this->actingAs($user)->getJson('/wallet/transactions');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data.transactions');
+        $response->assertJsonStructure([
+            'data' => [
+                'transactions' => [
+                    '*' => ['hash', 'amount', 'type', 'operation_type', 'receiver', 'created_at'],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_authenticated_user_can_make_a_deposit(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/wallet/deposits', ['amount' => 1000]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('financial_statements', [
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+    }
+
+    public function test_deposit_fails_when_amount_is_not_positive(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/wallet/deposits', ['amount' => 0]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('amount');
+    }
+
+    public function test_deposit_fails_when_amount_exceeds_the_maximum(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/wallet/deposits', ['amount' => 10000000]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('amount');
+    }
+
     public function test_authenticated_user_can_request_a_withdrawal(): void
     {
         Event::fake();
@@ -174,10 +236,12 @@ class WalletTest extends TestCase
 
     public function test_guest_cannot_access_wallet_endpoints(): void
     {
-        $this->getJson('/wallet/balance')->assertRedirect(route('login'));
-        $this->getJson('/wallet/balance-history')->assertRedirect(route('login'));
-        $this->getJson('/wallet/summary')->assertRedirect(route('login'));
-        $this->postJson('/wallet/withdrawals', ['amount' => 100])->assertRedirect(route('login'));
-        $this->postJson('/wallet/withdrawals/confirm', ['code' => 'X'])->assertRedirect(route('login'));
+        $this->getJson('/wallet/balance')->assertUnauthorized();
+        $this->getJson('/wallet/balance-history')->assertUnauthorized();
+        $this->getJson('/wallet/summary')->assertUnauthorized();
+        $this->getJson('/wallet/transactions')->assertUnauthorized();
+        $this->postJson('/wallet/deposits', ['amount' => 100])->assertUnauthorized();
+        $this->postJson('/wallet/withdrawals', ['amount' => 100])->assertUnauthorized();
+        $this->postJson('/wallet/withdrawals/confirm', ['code' => 'X'])->assertUnauthorized();
     }
 }

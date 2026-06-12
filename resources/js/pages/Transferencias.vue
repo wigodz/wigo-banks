@@ -1,10 +1,10 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import { WalletSummaryCards, WithdrawalDialog } from '@/components/molecules';
+import { DepositDialog, WalletSummaryCards, WalletTransactionsTable, WithdrawalDialog } from '@/components/molecules';
 import { PageHeader } from '@/components/organisms';
 import { Button } from '@/components/ui/button';
 
-function onWithdrawalConfirmed() {
+function onWalletUpdated() {
     window.location.reload();
 }
 </script>
@@ -18,9 +18,11 @@ function onWithdrawalConfirmed() {
         <WalletSummaryCards />
 
         <div class="flex flex-wrap gap-3">
-            <Button variant="outline" disabled>Depositar</Button>
-            <WithdrawalDialog @confirmed="onWithdrawalConfirmed" />
+            <DepositDialog @confirmed="onWalletUpdated" />
+            <WithdrawalDialog @confirmed="onWalletUpdated" />
             <Button variant="outline" disabled>Transferir</Button>
         </div>
+
+        <WalletTransactionsTable />
     </div>
 </template>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Abstracts\AbstractController;
 use App\Http\Requests\ConfirmWithdrawalRequest;
+use App\Http\Requests\DepositRequest;
 use App\Http\Requests\WithdrawalRequest;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +33,18 @@ class WalletController extends AbstractController
         return $this->ok($this->walletService->getSummary($request->user()));
     }
 
+    public function transactions(Request $request): JsonResponse
+    {
+        return $this->ok($this->walletService->getTransactions($request->user()));
+    }
+
+    public function deposit(DepositRequest $request): JsonResponse
+    {
+        $this->walletService->deposit($request->user(), $request->validated('amount'));
+
+        return $this->success('Depósito realizado com sucesso');
+    }
+
     public function requestWithdrawal(WithdrawalRequest $request): JsonResponse
     {
         try {
@@ -39,8 +52,6 @@ class WalletController extends AbstractController
 
             return $this->success('Código de confirmação enviado para o seu e-mail');
         } catch (ValidationException $e) {
-            report($e);
-
             return $this->error($this->messageErrorDefault, $e->errors());
         }
     }
@@ -52,8 +63,6 @@ class WalletController extends AbstractController
 
             return $this->success('Saque confirmado com sucesso');
         } catch (ValidationException $e) {
-            report($e);
-
             return $this->error($this->messageErrorDefault, $e->errors());
         }
     }
