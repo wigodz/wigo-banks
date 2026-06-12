@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\FinancialStatementController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,4 +21,6 @@ Route::middleware('auth')->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
 
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::apiResource('financial-statements', FinancialStatementController::class);
 });
