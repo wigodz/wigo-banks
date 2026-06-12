@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers;
 
 use App\Abstracts\AbstractController;
 use App\Http\Requests\FinancialStatementRequest;

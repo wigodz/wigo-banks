@@ -24,9 +24,9 @@ class AuthService
     public function register(array $data): array
     {
         $user = $this->userService->save([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'name' => data_get($data, 'name'),
+            'email' => data_get($data, 'email'),
+            'password' => Hash::make(data_get($data, 'password')),
         ]);
 
         Auth::login($user);
@@ -37,10 +37,6 @@ class AuthService
         ];
     }
 
-    /**
-     * Validate the user's credentials, dispatch a two-factor code and
-     * store the pending challenge in the session.
-     */
     public function login(array $credentials, bool $remember = false): void
     {
         $user = $this->userService->findOneWhere(['email' => $credentials['email']]);
@@ -77,9 +73,6 @@ class AuthService
         return session()->has('auth.two_factor.user_id');
     }
 
-    /**
-     * @return array{user: User, token: string}
-     */
     public function confirmTwoFactorCode(string $code): array
     {
         $user = User::findOrFail(session('auth.two_factor.user_id'));

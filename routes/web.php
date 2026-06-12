@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\V1\FinancialStatementController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\FinancialStatementController;
+use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -23,6 +24,9 @@ Route::middleware('auth')->group(function () {
     Route::inertia('historico', 'Historico')->name('historico');
 
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('wallet/balance', [WalletController::class, 'balance'])->name('wallet.balance');
+    Route::get('wallet/balance-history', [WalletController::class, 'balanceHistory'])->name('wallet.balance-history');
 
     Route::apiResource('financial-statements', FinancialStatementController::class);
 });
