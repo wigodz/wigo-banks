@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Events\TwoFactorCodeRequested;
 use App\Events\UserCreated;
-use App\Listeners\LogUserCreated;
-use App\Listeners\SendTwoFactorCodeNotification;
+use App\Events\WithdrawalCodeRequested;
+use App\Listeners\TwoFactorCodeRequested\SendTwoFactorCodeNotification;
+use App\Listeners\UserCreated\LogUserCreated;
+use App\Listeners\WithdrawalCodeRequested\SendWithdrawalCodeNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -22,6 +24,10 @@ class EventServiceProvider extends ServiceProvider
 
         TwoFactorCodeRequested::class => [
             SendTwoFactorCodeNotification::class,
+        ],
+
+        WithdrawalCodeRequested::class => [
+            SendWithdrawalCodeNotification::class,
         ],
     ];
 }

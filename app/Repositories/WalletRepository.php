@@ -36,4 +36,13 @@ class WalletRepository extends AbstractRepository
             ->groupBy('date')
             ->pluck('total', 'date');
     }
+
+    public function getSumByTypeSince(int $userId, MovementType $type, CarbonInterface $since): int
+    {
+        return (int) $this->model->query()
+            ->where('receiver_id', $userId)
+            ->where('type', $type)
+            ->where('created_at', '>=', $since)
+            ->sum('amount');
+    }
 }

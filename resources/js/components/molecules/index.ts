@@ -7,4 +7,7 @@ export { default as InputError } from './InputError.vue';
 export { default as Heading } from './Heading.vue';
 export { default as BalanceCard } from './BalanceCard.vue';
 export { default as BalanceChart } from './BalanceChart.vue';
+export { default as StatCard } from './StatCard.vue';
 export { default as TransactionItem } from './TransactionItem.vue';
+export { default as WalletSummaryCards } from './WalletSummaryCards.vue';
+export { default as WithdrawalDialog } from './WithdrawalDialog.vue';

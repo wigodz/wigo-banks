@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import StatCard from '@/components/molecules/StatCard.vue';
 import { formatCurrency } from '@/lib/format';
 import { balance as balanceRoute } from '@/routes/wallet';
 
@@ -27,17 +26,9 @@ onMounted(async () => {
 </script>
 
 <template>
-    <Card class="gap-2">
-        <CardHeader>
-            <p class="text-sm font-medium text-muted-foreground">
-                {{ label ?? 'Saldo disponível' }}
-            </p>
-        </CardHeader>
-        <CardContent>
-            <Skeleton v-if="loading" class="h-10 w-40" />
-            <p v-else class="font-mono text-4xl font-bold tracking-tight text-foreground tabular-nums">
-                {{ formatCurrency(balance ?? 0) }}
-            </p>
-        </CardContent>
-    </Card>
+    <StatCard
+        :label="label ?? 'Saldo disponível'"
+        :value="formatCurrency(balance ?? 0)"
+        :loading="loading"
+    />
 </template>

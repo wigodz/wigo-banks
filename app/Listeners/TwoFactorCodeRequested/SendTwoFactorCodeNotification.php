@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\TwoFactorCodeRequested;
 
-use App\Events\TwoFactorCodeRequested;
 use App\Notifications\TwoFactorCodeNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 

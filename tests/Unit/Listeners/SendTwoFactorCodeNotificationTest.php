@@ -3,7 +3,7 @@
 namespace Tests\Unit\Listeners;
 
 use App\Events\TwoFactorCodeRequested;
-use App\Listeners\SendTwoFactorCodeNotification;
+use App\Listeners\TwoFactorCodeRequested\SendTwoFactorCodeNotification;
 use App\Models\User;
 use App\Notifications\TwoFactorCodeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
