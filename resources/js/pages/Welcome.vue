@@ -1,9 +1,9 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { AppLogo } from '@/components/molecules';
 import { IconArrowDownCircle, IconArrowUpCircle, IconDollar, IconExchange } from '@/components/atoms/icons';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AppLogo } from '@/components/molecules';
 import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboard, login, register } from '@/routes';
 
 defineProps({
@@ -42,7 +42,6 @@ const transactions = [
     <Head title="Bem-vindo" />
 
     <div class="flex min-h-svh flex-col bg-background">
-        <!-- Hero -->
         <section class="relative overflow-hidden">
             <div
                 class="pointer-events-none absolute -top-32 -left-32 size-96 rounded-full bg-primary/10 blur-3xl"

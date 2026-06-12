@@ -1,34 +1,53 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import { onMounted, ref } from 'vue';
-import { PageHeader } from '@/components/organisms';
-import api from '@/lib/api';
+import { Head, Link } from '@inertiajs/vue3';
+import { BalanceCard, BalanceChart } from '@/components/molecules';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/format';
+import { transferencias } from '@/routes';
 
-const me = ref(null);
-const error = ref(null);
+const balanceHistory = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
 
-onMounted(async () => {
-    try {
-        const response = await api.get('/me');
-        me.value = response.data.data;
-    } catch {
-        error.value = 'Não foi possível carregar os dados do usuário.';
-    }
+    return {
+        date: date.toISOString().slice(0, 10),
+        balance: [482000, 475000, 510000, 498000, 530000, 521000, 548000][index],
+    };
 });
+
+const currentBalance = balanceHistory[balanceHistory.length - 1].balance;
 </script>
 
 <template>
     <Head title="Painel" />
 
-    <PageHeader title="Painel" description="Visão geral da sua conta" />
+    <div class="flex flex-col gap-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Saldo nos últimos 7 dias</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <BalanceChart :data="balanceHistory" />
+            </CardContent>
+        </Card>
 
-    <div class="mt-6">
-        <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-        <div v-else-if="me" class="space-y-1 text-sm">
-            <p><span class="font-medium">ID:</span> {{ me.id }}</p>
-            <p><span class="font-medium">Nome:</span> {{ me.name }}</p>
-            <p><span class="font-medium">E-mail:</span> {{ me.email }}</p>
+        <div class="grid gap-4 sm:grid-cols-2">
+            <BalanceCard :balance="formatCurrency(currentBalance)" />
+
+            <Card class="justify-center">
+                <CardContent class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-foreground">Transferências</p>
+                        <p class="text-sm text-muted-foreground">
+                            Envie dinheiro para outras contas
+                        </p>
+                    </div>
+                    <Button as-child>
+                        <Link :href="transferencias()">Transferir</Link>
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
-        <p v-else class="text-sm text-muted-foreground">Carregando...</p>
     </div>
 </template>

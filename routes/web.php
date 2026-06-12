@@ -19,6 +19,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::inertia('transferencias', 'Transferencias')->name('transferencias');
+    Route::inertia('historico', 'Historico')->name('historico');
 
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 

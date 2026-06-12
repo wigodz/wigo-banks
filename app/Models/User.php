@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Common\Traits\Finance;
 use App\Common\Traits\HashIdsModel;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -29,7 +30,7 @@ use Laravel\Passport\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HashIdsModel, Notifiable;
+    use Finance, HasApiTokens, HasFactory, HashIdsModel, Notifiable;
 
     /**
      * Get the attributes that should be cast.

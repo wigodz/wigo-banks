@@ -4,4 +4,7 @@ export { default as IconArrowUp } from './IconArrowUp.vue';
 export { default as IconArrowUpCircle } from './IconArrowUpCircle.vue';
 export { default as IconDollar } from './IconDollar.vue';
 export { default as IconExchange } from './IconExchange.vue';
+export { default as IconHistory } from './IconHistory.vue';
+export { default as IconHome } from './IconHome.vue';
+export { default as IconLogout } from './IconLogout.vue';
 export { default as IconPlus } from './IconPlus.vue';

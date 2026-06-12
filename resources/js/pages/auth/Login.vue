@@ -1,6 +1,6 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
-import { InputError, TextLink } from '@/components/molecules';
+import { Heading, InputError, TextLink } from '@/components/molecules';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -8,13 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
-
-defineOptions({
-    layout: {
-        title: 'Entrar na sua conta',
-        description: 'Informe seu e-mail e senha para continuar',
-    },
-});
 
 const form = useForm({
     email: '',
@@ -31,6 +24,8 @@ function submit() {
 
 <template>
     <Head title="Entrar" />
+
+    <Heading title="Entrar na sua conta" description="Informe seu e-mail e senha para continuar" />
 
     <form class="flex flex-col gap-6" @submit.prevent="submit">
         <div class="grid gap-6">

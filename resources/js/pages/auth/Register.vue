@@ -1,19 +1,12 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
-import { InputError, TextLink } from '@/components/molecules';
+import { Heading, InputError, TextLink } from '@/components/molecules';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
-
-defineOptions({
-    layout: {
-        title: 'Criar conta',
-        description: 'Preencha os dados abaixo para criar sua conta',
-    },
-});
 
 const form = useForm({
     name: '',
@@ -31,6 +24,8 @@ function submit() {
 
 <template>
     <Head title="Criar conta" />
+
+    <Heading title="Criar conta" description="Preencha os dados abaixo para criar sua conta" />
 
     <form class="flex flex-col gap-6" @submit.prevent="submit">
         <div class="grid gap-6">

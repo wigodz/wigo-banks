@@ -6,4 +6,5 @@ export { default as TextLink } from './TextLink.vue';
 export { default as InputError } from './InputError.vue';
 export { default as Heading } from './Heading.vue';
 export { default as BalanceCard } from './BalanceCard.vue';
+export { default as BalanceChart } from './BalanceChart.vue';
 export { default as TransactionItem } from './TransactionItem.vue';
