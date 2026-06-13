@@ -12,6 +12,8 @@ export { default as StatCard } from './StatCard.vue';
 export { default as TransactionItem } from './TransactionItem.vue';
 export { default as WalletSummaryCards } from './WalletSummaryCards.vue';
 export { default as WalletTransactionsTable } from './WalletTransactionsTable.vue';
+export { default as TransactionHistoryTable } from './TransactionHistoryTable.vue';
+export { default as TransactionFilters } from './TransactionFilters.vue';
 export { default as DepositDialog } from './DepositDialog.vue';
 export { default as TransferDialog } from './TransferDialog.vue';
 export { default as WithdrawalDialog } from './WithdrawalDialog.vue';

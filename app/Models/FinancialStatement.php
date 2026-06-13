@@ -24,8 +24,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ * @property int|null $reference_id
  */
-#[Fillable(['operation_type', 'type', 'reversed', 'requester_id', 'receiver_id', 'amount'])]
+#[Fillable(['operation_type', 'type', 'reversed', 'requester_id', 'receiver_id', 'amount', 'reference_id'])]
 class FinancialStatement extends Model
 {
     use HasFactory, HashIdsModel, SoftDeletes;
@@ -47,5 +48,10 @@ class FinancialStatement extends Model
     public function receiver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function reference(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reference_id');
     }
 }

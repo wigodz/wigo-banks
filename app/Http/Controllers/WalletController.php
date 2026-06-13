@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Abstracts\AbstractController;
 use App\Http\Requests\ConfirmWithdrawalRequest;
 use App\Http\Requests\DepositRequest;
+use App\Http\Requests\ReversalRequest;
+use App\Http\Requests\TransactionHistoryRequest;
 use App\Http\Requests\TransferRequest;
 use App\Http\Requests\WithdrawalRequest;
 use App\Services\UserService;
@@ -40,6 +42,24 @@ class WalletController extends AbstractController
     public function transactions(Request $request): JsonResponse
     {
         return $this->ok($this->walletService->getTransactions($request->user()));
+    }
+
+    public function history(TransactionHistoryRequest $request): JsonResponse
+    {
+        $filters = $request->only(['operation_type', 'type', 'date_from', 'date_to', 'receiver']);
+
+        return $this->ok($this->walletService->getTransactionHistory($request->user(), $filters));
+    }
+
+    public function reverse(ReversalRequest $request): JsonResponse
+    {
+        try {
+            $this->walletService->reverse($request->user(), $request->validated('transaction'));
+
+            return $this->success('Transação revertida com sucesso');
+        } catch (ValidationException $e) {
+            return $this->error($this->messageErrorDefault, $e->errors());
+        }
     }
 
     public function deposit(DepositRequest $request): JsonResponse

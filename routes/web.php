@@ -29,11 +29,13 @@ Route::middleware('auth')->group(function () {
     Route::get('wallet/balance-history', [WalletController::class, 'balanceHistory'])->name('wallet.balance-history');
     Route::get('wallet/summary', [WalletController::class, 'summary'])->name('wallet.summary');
     Route::get('wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
+    Route::get('wallet/history', [WalletController::class, 'history'])->name('wallet.history');
     Route::post('wallet/deposits', [WalletController::class, 'deposit'])->name('wallet.deposits.store');
     Route::get('wallet/recipients', [WalletController::class, 'recipients'])->name('wallet.recipients');
     Route::post('wallet/transfers', [WalletController::class, 'transfer'])->name('wallet.transfers.store');
     Route::post('wallet/withdrawals', [WalletController::class, 'requestWithdrawal'])->name('wallet.withdrawals.store');
     Route::post('wallet/withdrawals/confirm', [WalletController::class, 'confirmWithdrawal'])->name('wallet.withdrawals.confirm');
+    Route::post('wallet/reversals', [WalletController::class, 'reverse'])->name('wallet.reversals.store');
 
     Route::apiResource('financial-statements', FinancialStatementController::class);
 });

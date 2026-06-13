@@ -168,6 +168,54 @@ class WalletServiceTest extends TestCase
         $this->assertSame(400, app(WalletService::class)->getBalance($recipient)['balance']);
     }
 
+    public function test_transfer_links_the_correspondent_statements_through_a_reference(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $debit = app(WalletService::class)->transfer($sender, $recipient, 400);
+        $debit->refresh();
+
+        $credit = FinancialStatement::query()
+            ->where('receiver_id', $recipient->id)
+            ->where('type', MovementType::Positive)
+            ->firstOrFail();
+
+        $this->assertSame($credit->id, $debit->reference_id);
+        $this->assertSame($debit->id, $credit->reference_id);
+    }
+
+    public function test_get_transaction_history_filtered_by_receiver_returns_the_outgoing_debit(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        app(WalletService::class)->transfer($sender, $recipient, 400);
+
+        $result = app(WalletService::class)->getTransactionHistory($sender, ['receiver_id' => $recipient->id]);
+
+        $this->assertCount(1, $result['transactions']);
+        $this->assertSame(MovementType::Negative, $result['transactions'][0]['type']);
+        $this->assertSame(400, $result['transactions'][0]['amount']);
+        $this->assertSame($recipient->name, $result['transactions'][0]['receiver']);
+    }
+
     public function test_transfer_fails_when_amount_exceeds_balance(): void
     {
         $sender = User::factory()->create();
@@ -278,6 +326,233 @@ class WalletServiceTest extends TestCase
         $result = app(WalletService::class)->getTransactions($user);
 
         $this->assertCount(10, $result['transactions']);
+    }
+
+    public function test_get_transaction_history_returns_paginated_transactions_with_the_reversed_flag(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        FinancialStatement::factory()->count(12)->create([
+            'requester_id' => $other->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 100,
+        ]);
+
+        $result = app(WalletService::class)->getTransactionHistory($user);
+
+        $this->assertCount(10, $result['transactions']);
+        $this->assertSame(
+            ['hash', 'amount', 'type', 'operation_type', 'receiver', 'created_at', 'reversed', 'reversible'],
+            array_keys($result['transactions'][0]),
+        );
+        $this->assertSame([
+            'current_page' => 1,
+            'last_page' => 2,
+            'per_page' => 10,
+            'total' => 12,
+        ], $result['pagination']);
+    }
+
+    public function test_reverse_deposit_creates_an_opposite_reversal_and_marks_both_as_reversed(): void
+    {
+        $user = User::factory()->create();
+
+        $deposit = FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $reversal = app(WalletService::class)->reverse($user, $deposit->hash);
+
+        $this->assertSame(OperationType::Reversal, $reversal->operation_type);
+        $this->assertSame(MovementType::Negative, $reversal->type);
+        $this->assertSame(1000, $reversal->amount);
+        $this->assertSame($deposit->id, $reversal->reference_id);
+        $this->assertTrue($reversal->reversed);
+        $this->assertTrue($deposit->fresh()->reversed);
+        $this->assertSame(0, app(WalletService::class)->getBalance($user)['balance']);
+    }
+
+    public function test_reverse_withdrawal_returns_the_amount_to_the_user(): void
+    {
+        $user = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $withdrawal = FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Withdrawal,
+            'type' => MovementType::Negative,
+            'amount' => 300,
+        ]);
+
+        $reversal = app(WalletService::class)->reverse($user, $withdrawal->hash);
+
+        $this->assertSame(OperationType::Reversal, $reversal->operation_type);
+        $this->assertSame(MovementType::Positive, $reversal->type);
+        $this->assertTrue($withdrawal->fresh()->reversed);
+        $this->assertSame(1000, app(WalletService::class)->getBalance($user)['balance']);
+    }
+
+    public function test_reverse_transfer_reverses_both_statements_for_sender_and_recipient(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $debit = app(WalletService::class)->transfer($sender, $recipient, 400);
+
+        app(WalletService::class)->reverse($sender, $debit->hash);
+
+        $debit->refresh();
+        $credit = $debit->reference;
+
+        $this->assertTrue($debit->reversed);
+        $this->assertTrue($credit->reversed);
+
+        // Saldos restaurados: remetente volta a ter 1000 e o recebedor zera.
+        $this->assertSame(1000, app(WalletService::class)->getBalance($sender)['balance']);
+        $this->assertSame(0, app(WalletService::class)->getBalance($recipient)['balance']);
+
+        $this->assertSame(2, FinancialStatement::where('operation_type', OperationType::Reversal)->count());
+    }
+
+    public function test_reverse_fails_when_transaction_is_already_reversed(): void
+    {
+        $user = User::factory()->create();
+
+        $deposit = FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        app(WalletService::class)->reverse($user, $deposit->hash);
+
+        $this->expectException(ValidationException::class);
+
+        app(WalletService::class)->reverse($user, $deposit->fresh()->hash);
+    }
+
+    public function test_reverse_fails_when_user_is_not_the_requester(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        $deposit = FinancialStatement::factory()->create([
+            'requester_id' => $other->id,
+            'receiver_id' => $other->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(WalletService::class)->reverse($user, $deposit->hash);
+    }
+
+    public function test_history_reversible_flag_reflects_available_balance(): void
+    {
+        $user = User::factory()->create();
+
+        $deposit = FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $withdrawal = FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Withdrawal,
+            'type' => MovementType::Negative,
+            'amount' => 300,
+        ]);
+
+        $transactions = collect(app(WalletService::class)->getTransactionHistory($user)['transactions']);
+
+        // Saldo é 700: o depósito de 1000 não pode mais ser revertido, mas o saque sim.
+        $this->assertFalse($transactions->firstWhere('hash', $deposit->hash)['reversible']);
+        $this->assertTrue($transactions->firstWhere('hash', $withdrawal->hash)['reversible']);
+    }
+
+    public function test_reverse_fails_when_balance_is_insufficient_to_revert_a_positive_statement(): void
+    {
+        $user = User::factory()->create();
+
+        $deposit = FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Withdrawal,
+            'type' => MovementType::Negative,
+            'amount' => 300,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(WalletService::class)->reverse($user, $deposit->hash);
+    }
+
+    public function test_reverse_transfer_fails_when_recipient_lacks_balance_to_return_the_amount(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $debit = app(WalletService::class)->transfer($sender, $recipient, 400);
+
+        // O recebedor gasta parte do valor, ficando sem saldo para devolvê-lo.
+        FinancialStatement::factory()->create([
+            'requester_id' => $recipient->id,
+            'receiver_id' => $recipient->id,
+            'operation_type' => OperationType::Withdrawal,
+            'type' => MovementType::Negative,
+            'amount' => 200,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(WalletService::class)->reverse($sender, $debit->hash);
     }
 
     public function test_request_withdrawal_dispatches_event_with_code_when_amount_is_valid(): void

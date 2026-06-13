@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Common\Traits\Finance;
 use App\Common\Traits\HashIdsModel;
 use Database\Factories\UserFactory;
