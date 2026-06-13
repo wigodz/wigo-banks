@@ -9,6 +9,7 @@ use App\Services\WalletService;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\WalletSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class DatabaseSeederTest extends TestCase
@@ -24,7 +25,7 @@ class DatabaseSeederTest extends TestCase
         $test = User::where('email', 'test@example.com')->first();
         $this->assertNotNull($test);
         $this->assertNotNull($test->hash);
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('password', $test->password));
+        $this->assertTrue(Hash::check('password', $test->password));
     }
 
     public function test_wallet_seeder_creates_consistent_movements_and_balances(): void
