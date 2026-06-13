@@ -111,19 +111,6 @@ class WalletRepository extends AbstractRepository
         }
     }
 
-    public function createTransfer(array $debit, array $credit): FinancialStatement
-    {
-        return DB::transaction(function () use ($debit, $credit) {
-            $debitStatement = $this->model->query()->create($debit);
-            $creditStatement = $this->model->query()->create($credit);
-
-            $debitStatement->update(['reference_id' => $creditStatement->id]);
-            $creditStatement->update(['reference_id' => $debitStatement->id]);
-
-            return $debitStatement;
-        });
-    }
-
     public function findRequesterStatement(int $userId, string $hash): ?FinancialStatement
     {
         return $this->model->query()

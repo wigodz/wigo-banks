@@ -3,12 +3,30 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Notifications\WelcomeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_registration_sends_a_welcome_email()
+    {
+        Notification::fake();
+
+        $this->post(route('register.store'), [
+            'name' => 'Maria Souza',
+            'email' => 'maria.souza@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $user = User::where('email', 'maria.souza@example.com')->firstOrFail();
+
+        Notification::assertSentTo($user, WelcomeNotification::class);
+    }
 
     public function test_login_screen_can_be_rendered()
     {

@@ -30,15 +30,16 @@
             }
         </style>
 
-        <link rel="icon" href="/favicon.ico?v={{ filemtime(public_path('favicon.ico')) }}" sizes="64x64">
-        <link rel="icon" href="/favicon.svg?v={{ filemtime(public_path('favicon.svg')) }}" type="image/svg+xml">
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v={{ filemtime(public_path('favicon.ico')) }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v={{ filemtime(public_path('favicon-32x32.png')) }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v={{ filemtime(public_path('favicon-16x16.png')) }}">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png?v={{ filemtime(public_path('apple-touch-icon.png')) }}">
 
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.js', "resources/js/pages/{$page['component']}.vue"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ config('app.name', 'Wigo Banks') }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

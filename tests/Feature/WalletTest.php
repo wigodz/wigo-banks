@@ -7,9 +7,12 @@ use App\Enums\OperationType;
 use App\Events\WithdrawalCodeRequested;
 use App\Models\FinancialStatement;
 use App\Models\User;
+use App\Notifications\DepositCompletedNotification;
+use App\Notifications\TransferReceivedNotification;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class WalletTest extends TestCase
@@ -275,6 +278,49 @@ class WalletTest extends TestCase
             'type' => MovementType::Positive,
             'amount' => 1000,
         ]);
+    }
+
+    public function test_deposit_sends_a_confirmation_email(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson('/wallet/deposits', ['amount' => 1000])->assertOk();
+
+        Notification::assertSentTo(
+            $user,
+            DepositCompletedNotification::class,
+            fn ($notification) => $notification->amount === 1000,
+        );
+    }
+
+    public function test_transfer_notifies_the_recipient_by_email(): void
+    {
+        Notification::fake();
+
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $this->actingAs($sender)->postJson('/wallet/transfers', [
+            'amount' => 400,
+            'receiver' => $recipient->hash,
+        ])->assertOk();
+
+        Notification::assertSentTo(
+            $recipient,
+            TransferReceivedNotification::class,
+            fn ($notification) => $notification->amount === 400 && $notification->senderName === $sender->name,
+        );
+        Notification::assertNotSentTo($sender, TransferReceivedNotification::class);
     }
 
     public function test_deposit_fails_when_amount_is_not_positive(): void

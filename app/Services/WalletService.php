@@ -5,12 +5,15 @@ namespace App\Services;
 use App\Abstracts\AbstractService;
 use App\Enums\MovementType;
 use App\Enums\OperationType;
+use App\Events\DepositCompleted;
+use App\Events\TransferReceived;
 use App\Events\WithdrawalCodeRequested;
 use App\Models\FinancialStatement;
 use App\Models\User;
 use App\Repositories\WalletRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -148,6 +151,19 @@ class WalletService extends AbstractService
         ]);
     }
 
+    public function afterSave($entity, array $params)
+    {
+        if ($entity->operation_type === OperationType::Deposit) {
+            event(new DepositCompleted($entity->receiver, $entity->amount));
+        }
+
+        if ($entity->operation_type === OperationType::Transfer && $entity->type === MovementType::Positive) {
+            event(new TransferReceived($entity->receiver, $entity->requester, $entity->amount));
+        }
+
+        return $entity;
+    }
+
     public function transfer(User $sender, User $recipient, int $amount): FinancialStatement
     {
         if ($recipient->is($sender)) {
@@ -164,22 +180,29 @@ class WalletService extends AbstractService
             ]);
         }
 
-        return $this->repository->createTransfer(
-            [
+        return DB::transaction(function () use ($sender, $recipient, $amount) {
+            $debit = $this->save([
                 'operation_type' => OperationType::Transfer,
                 'type' => MovementType::Negative,
                 'requester_id' => $sender->id,
                 'receiver_id' => $sender->id,
                 'amount' => $amount,
-            ],
-            [
+            ]);
+
+            $credit = $this->save([
                 'operation_type' => OperationType::Transfer,
                 'type' => MovementType::Positive,
                 'requester_id' => $sender->id,
                 'receiver_id' => $recipient->id,
                 'amount' => $amount,
-            ],
-        );
+            ]);
+
+            // Liga os extratos correspondentes; a execução fica no repositório.
+            $this->repository->update($debit->id, ['reference_id' => $credit->id]);
+            $this->repository->update($credit->id, ['reference_id' => $debit->id]);
+
+            return $debit;
+        });
     }
 
     public function requestWithdrawal(User $user, int $amount): void

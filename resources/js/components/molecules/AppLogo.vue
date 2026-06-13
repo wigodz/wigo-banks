@@ -1,13 +1,7 @@
-<script setup>
-import AppLogoIcon from './AppLogoIcon.vue';
-</script>
+<script setup></script>
 
 <template>
-    <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-    >
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
-    </div>
+    <img src="/logo.png" alt="Wigo Banks" class="size-8 shrink-0 rounded-md" />
     <div class="ml-1 grid flex-1 text-left text-sm">
         <span class="mb-0.5 truncate leading-tight font-semibold"
             >Wigo Banks</span
