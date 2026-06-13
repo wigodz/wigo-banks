@@ -143,6 +143,66 @@ class WalletServiceTest extends TestCase
         $this->assertSame($user->id, $statement->receiver_id);
     }
 
+    public function test_transfer_creates_financial_statements_for_sender_and_recipient(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $statement = app(WalletService::class)->transfer($sender, $recipient, 400);
+
+        $this->assertSame(OperationType::Transfer, $statement->operation_type);
+        $this->assertSame(MovementType::Negative, $statement->type);
+        $this->assertSame(400, $statement->amount);
+        $this->assertSame($sender->id, $statement->requester_id);
+        $this->assertSame($sender->id, $statement->receiver_id);
+
+        $this->assertSame(600, app(WalletService::class)->getBalance($sender)['balance']);
+        $this->assertSame(400, app(WalletService::class)->getBalance($recipient)['balance']);
+    }
+
+    public function test_transfer_fails_when_amount_exceeds_balance(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(WalletService::class)->transfer($sender, $recipient, 1500);
+    }
+
+    public function test_transfer_fails_when_recipient_is_the_sender(): void
+    {
+        $user = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $user->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(WalletService::class)->transfer($user, $user, 100);
+    }
+
     public function test_get_transactions_returns_the_latest_transactions(): void
     {
         $user = User::factory()->create();
@@ -171,6 +231,35 @@ class WalletServiceTest extends TestCase
         $this->assertSame(300, $result['transactions'][0]['amount']);
         $this->assertSame('Saque', $result['transactions'][0]['operation_type']);
         $this->assertSame($user->name, $result['transactions'][0]['receiver']);
+    }
+
+    public function test_get_transactions_shows_a_transfer_to_both_sender_and_recipient(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        app(WalletService::class)->transfer($sender, $recipient, 400);
+
+        $senderTransactions = app(WalletService::class)->getTransactions($sender)['transactions'];
+        $recipientTransactions = app(WalletService::class)->getTransactions($recipient)['transactions'];
+
+        $this->assertCount(2, $senderTransactions);
+        $this->assertSame('Transferência', $senderTransactions[0]['operation_type']);
+        $this->assertSame(400, $senderTransactions[0]['amount']);
+        $this->assertSame('Depósito', $senderTransactions[1]['operation_type']);
+        $this->assertSame(1000, $senderTransactions[1]['amount']);
+
+        $this->assertCount(1, $recipientTransactions);
+        $this->assertSame('Transferência', $recipientTransactions[0]['operation_type']);
+        $this->assertSame(400, $recipientTransactions[0]['amount']);
     }
 
     public function test_get_transactions_limits_results_to_ten(): void

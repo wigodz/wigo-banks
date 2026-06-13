@@ -85,6 +85,40 @@ class WalletService extends AbstractService
         ]);
     }
 
+    public function transfer(User $sender, User $recipient, int $amount): FinancialStatement
+    {
+        if ($recipient->is($sender)) {
+            throw ValidationException::withMessages([
+                'receiver' => 'Não é possível transferir para a própria conta.',
+            ]);
+        }
+
+        $balance = $this->repository->getBalance($sender->id);
+
+        if ($amount <= 0 || $amount > $balance) {
+            throw ValidationException::withMessages([
+                'amount' => 'O valor da transferência deve ser maior que zero e não pode exceder o saldo disponível.',
+            ]);
+        }
+
+        return $this->repository->createTransfer(
+            [
+                'operation_type' => OperationType::Transfer,
+                'type' => MovementType::Negative,
+                'requester_id' => $sender->id,
+                'receiver_id' => $sender->id,
+                'amount' => $amount,
+            ],
+            [
+                'operation_type' => OperationType::Transfer,
+                'type' => MovementType::Positive,
+                'requester_id' => $sender->id,
+                'receiver_id' => $recipient->id,
+                'amount' => $amount,
+            ],
+        );
+    }
+
     public function requestWithdrawal(User $user, int $amount): void
     {
         $balance = $this->repository->getBalance($user->id);

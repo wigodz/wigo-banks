@@ -13,4 +13,5 @@ export { default as TransactionItem } from './TransactionItem.vue';
 export { default as WalletSummaryCards } from './WalletSummaryCards.vue';
 export { default as WalletTransactionsTable } from './WalletTransactionsTable.vue';
 export { default as DepositDialog } from './DepositDialog.vue';
+export { default as TransferDialog } from './TransferDialog.vue';
 export { default as WithdrawalDialog } from './WithdrawalDialog.vue';

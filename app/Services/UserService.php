@@ -25,6 +25,18 @@ class UserService extends AbstractService
         ];
     }
 
+    public function getTransferRecipients(User $user): array
+    {
+        return [
+            'recipients' => $this->repository->getTransferRecipients($user->id)
+                ->map(fn (User $recipient) => [
+                    'hash' => $recipient->hash,
+                    'name' => $recipient->name,
+                ])
+                ->all(),
+        ];
+    }
+
     public function afterSave($entity, array $params)
     {
         event(new UserCreated($entity));

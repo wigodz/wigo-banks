@@ -74,9 +74,11 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@lint:check",
-            "@types:check",
             "@php artisan test"
         ],
+        "pint": "@php ./vendor/bin/pint --test",
+        "pint:fix": "@php ./vendor/bin/pint",
+        "pint:changes": "@php ./vendor/bin/pint --dirty",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

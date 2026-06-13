@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Abstracts\AbstractController;
 use App\Http\Requests\ConfirmWithdrawalRequest;
 use App\Http\Requests\DepositRequest;
+use App\Http\Requests\TransferRequest;
 use App\Http\Requests\WithdrawalRequest;
+use App\Services\UserService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,8 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class WalletController extends AbstractController
 {
-    public function __construct(private readonly WalletService $walletService)
-    {
+    public function __construct(
+        private readonly WalletService $walletService,
+        private readonly UserService $userService,
+    ) {
         $this->service = $walletService;
     }
 
@@ -43,6 +47,24 @@ class WalletController extends AbstractController
         $this->walletService->deposit($request->user(), $request->validated('amount'));
 
         return $this->success('Depósito realizado com sucesso');
+    }
+
+    public function recipients(Request $request): JsonResponse
+    {
+        return $this->ok($this->userService->getTransferRecipients($request->user()));
+    }
+
+    public function transfer(TransferRequest $request): JsonResponse
+    {
+        try {
+            $recipient = $this->userService->find($request->validated('receiver'));
+
+            $this->walletService->transfer($request->user(), $recipient, $request->validated('amount'));
+
+            return $this->success('Transferência realizada com sucesso');
+        } catch (ValidationException $e) {
+            return $this->error($this->messageErrorDefault, $e->errors());
+        }
     }
 
     public function requestWithdrawal(WithdrawalRequest $request): JsonResponse

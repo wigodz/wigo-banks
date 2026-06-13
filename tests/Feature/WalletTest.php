@@ -136,6 +136,102 @@ class WalletTest extends TestCase
         $response->assertJsonValidationErrors('amount');
     }
 
+    public function test_authenticated_user_can_get_transfer_recipients(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        $response = $this->actingAs($user)->getJson('/wallet/recipients');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.recipients.0.hash', $other->hash);
+        $response->assertJsonPath('data.recipients.0.name', $other->name);
+        $response->assertJsonCount(1, 'data.recipients');
+    }
+
+    public function test_authenticated_user_can_make_a_transfer(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $response = $this->actingAs($sender)->postJson('/wallet/transfers', [
+            'amount' => 400,
+            'receiver' => $recipient->hash,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('financial_statements', [
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Transfer,
+            'type' => MovementType::Negative,
+            'amount' => 400,
+        ]);
+        $this->assertDatabaseHas('financial_statements', [
+            'requester_id' => $sender->id,
+            'receiver_id' => $recipient->id,
+            'operation_type' => OperationType::Transfer,
+            'type' => MovementType::Positive,
+            'amount' => 400,
+        ]);
+    }
+
+    public function test_transfer_fails_when_amount_exceeds_balance(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $sender->id,
+            'receiver_id' => $sender->id,
+            'operation_type' => OperationType::Deposit,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $response = $this->actingAs($sender)->postJson('/wallet/transfers', [
+            'amount' => 1500,
+            'receiver' => $recipient->hash,
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('amount');
+    }
+
+    public function test_transfer_fails_when_receiver_is_the_authenticated_user(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/wallet/transfers', [
+            'amount' => 100,
+            'receiver' => $user->hash,
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('receiver');
+    }
+
+    public function test_transfer_fails_when_receiver_does_not_exist(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/wallet/transfers', [
+            'amount' => 100,
+            'receiver' => 'invalidhash',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('receiver');
+    }
+
     public function test_authenticated_user_can_request_a_withdrawal(): void
     {
         Event::fake();
@@ -240,6 +336,8 @@ class WalletTest extends TestCase
         $this->getJson('/wallet/balance-history')->assertUnauthorized();
         $this->getJson('/wallet/summary')->assertUnauthorized();
         $this->getJson('/wallet/transactions')->assertUnauthorized();
+        $this->getJson('/wallet/recipients')->assertUnauthorized();
+        $this->postJson('/wallet/transfers', ['amount' => 100, 'receiver' => 'X'])->assertUnauthorized();
         $this->postJson('/wallet/deposits', ['amount' => 100])->assertUnauthorized();
         $this->postJson('/wallet/withdrawals', ['amount' => 100])->assertUnauthorized();
         $this->postJson('/wallet/withdrawals/confirm', ['code' => 'X'])->assertUnauthorized();

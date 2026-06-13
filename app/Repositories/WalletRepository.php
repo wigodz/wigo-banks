@@ -7,6 +7,7 @@ use App\Enums\MovementType;
 use App\Models\FinancialStatement;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class WalletRepository extends AbstractRepository
 {
@@ -50,11 +51,25 @@ class WalletRepository extends AbstractRepository
     {
         return $this->model->query()
             ->where('requester_id', $userId)
-            ->orWhere('receiver_id', $userId)
+            ->where('receiver_id', $userId)
+            ->orWhere(function ($query) use ($userId) {
+                $query->where('receiver_id', $userId)
+                    ->where('type', MovementType::Positive);
+            })
             ->with(['requester', 'receiver'])
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->limit($limit)
             ->get();
+    }
+
+    public function createTransfer(array $debit, array $credit): FinancialStatement
+    {
+        return DB::transaction(function () use ($debit, $credit) {
+            $statement = $this->model->query()->create($debit);
+            $this->model->query()->create($credit);
+
+            return $statement;
+        });
     }
 }
