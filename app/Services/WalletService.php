@@ -18,18 +18,20 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @extends AbstractService<WalletRepository>
+ */
 class WalletService extends AbstractService
 {
     private const WITHDRAWAL_CODE_LENGTH = 12;
 
     private const WITHDRAWAL_CODE_TTL_MINUTES = 5;
 
-    private UserService $userService;
-
-    public function __construct(WalletRepository $repository)
-    {
+    public function __construct(
+        WalletRepository $repository,
+        private readonly UserService $userService,
+    ) {
         $this->repository = $repository;
-        $this->userService = app(UserService::class);
     }
 
     public function getBalance(User $user): array
@@ -89,7 +91,7 @@ class WalletService extends AbstractService
         $paginator = $this->repository->paginateTransactions($user->id, $filters, $perPage);
 
         return [
-            'transactions' => $paginator->getCollection()
+            'transactions' => collect($paginator->items())
                 ->map(fn (FinancialStatement $statement) => $this->mapTransaction($statement, detailed: true, userId: $user->id))
                 ->all(),
             'pagination' => [
@@ -197,7 +199,6 @@ class WalletService extends AbstractService
                 'amount' => $amount,
             ]);
 
-            // Liga os extratos correspondentes; a execução fica no repositório.
             $this->repository->update($debit->id, ['reference_id' => $credit->id]);
             $this->repository->update($credit->id, ['reference_id' => $debit->id]);
 
@@ -253,7 +254,7 @@ class WalletService extends AbstractService
 
     public function reverse(User $user, string $hash): FinancialStatement
     {
-        $statement = $this->repository->findRequesterStatement($user->id, $hash);
+        $statement = $this->repository->findOneWhere(['hash' => $hash, 'requester_id' => $user->id]);
 
         if (! $statement) {
             throw ValidationException::withMessages([
@@ -261,6 +262,17 @@ class WalletService extends AbstractService
             ]);
         }
 
+        $originals = $this->statementsToReverse($statement);
+
+        $this->validateReverseRequest($statement, $originals);
+
+        $reversals = $originals->map(fn (FinancialStatement $original) => $this->buildReversal($original))->all();
+
+        return $this->repository->createReversals($originals, $reversals);
+    }
+
+    private function validateReverseRequest(?FinancialStatement $statement, Collection $originals): void
+    {
         if ($statement->reversed) {
             throw ValidationException::withMessages([
                 'transaction' => 'Esta transação já foi revertida.',
@@ -273,17 +285,11 @@ class WalletService extends AbstractService
             ]);
         }
 
-        $originals = $this->statementsToReverse($statement);
-
         if (! $this->hasBalanceForReversal($originals)) {
             throw ValidationException::withMessages([
                 'transaction' => 'Saldo insuficiente para reverter esta movimentação.',
             ]);
         }
-
-        $reversals = $originals->map(fn (FinancialStatement $original) => $this->buildReversal($original))->all();
-
-        return $this->repository->createReversals($originals, $reversals);
     }
 
     private function statementsToReverse(FinancialStatement $statement): Collection

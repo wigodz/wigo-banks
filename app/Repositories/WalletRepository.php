@@ -120,13 +120,6 @@ class WalletRepository extends AbstractRepository
             ->first();
     }
 
-    /**
-     * Persiste os extratos de reversão e marca tanto os originais quanto as
-     * reversões como revertidos, dentro de uma única transação.
-     *
-     * @param  Collection<int, FinancialStatement>  $originals
-     * @param  array<int, array<string, mixed>>  $reversals
-     */
     public function createReversals(Collection $originals, array $reversals): FinancialStatement
     {
         return DB::transaction(function () use ($originals, $reversals) {

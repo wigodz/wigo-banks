@@ -91,7 +91,6 @@ class AuthService
 
     public function logout(User $user): void
     {
-        // Revoga eventuais tokens de API do usuário, não apenas o da requisição.
         $user->tokens()->each(fn ($token) => $token->revoke());
 
         Auth::guard('web')->logout();

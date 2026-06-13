@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Common\Traits\Finance;
 use App\Common\Traits\HashIdsModel;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -29,7 +28,7 @@ use Laravel\Passport\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use Finance, HasApiTokens, HasFactory, HashIdsModel, Notifiable;
+    use HasApiTokens, HasFactory, HashIdsModel, Notifiable;
 
     /**
      * Get the attributes that should be cast.

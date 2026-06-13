@@ -7,6 +7,9 @@ use App\Events\UserCreated;
 use App\Models\User;
 use App\Repositories\UserRepository;
 
+/**
+ * @extends AbstractService<UserRepository>
+ */
 class UserService extends AbstractService
 {
     public function __construct(UserRepository $repository)

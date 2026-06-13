@@ -44,6 +44,22 @@ class WalletServiceTest extends TestCase
         $this->assertSame(['balance' => 1000], $result);
     }
 
+    public function test_get_balance_ignores_entries_where_user_is_only_the_requester(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        FinancialStatement::factory()->create([
+            'requester_id' => $user->id,
+            'receiver_id' => $other->id,
+            'operation_type' => OperationType::Transfer,
+            'type' => MovementType::Positive,
+            'amount' => 1000,
+        ]);
+
+        $this->assertSame(['balance' => 0], app(WalletService::class)->getBalance($user));
+    }
+
     public function test_get_balance_history_returns_running_balance_for_the_last_seven_days(): void
     {
         $today = Carbon::create(2026, 6, 12, 12, 0, 0);

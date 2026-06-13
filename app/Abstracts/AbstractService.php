@@ -8,12 +8,16 @@ use App\Interfaces\ServiceInterface;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @template TRepository of RepositoryInterface
+ */
 class AbstractService implements ServiceInterface
 {
     use ResolvesHashParams;
 
     protected $with = [];
 
+    /** @var TRepository */
     protected RepositoryInterface $repository;
 
     public function all(array $params = [], array $with = [])
