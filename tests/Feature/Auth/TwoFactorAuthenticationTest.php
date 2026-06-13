@@ -8,12 +8,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
-use Tests\Concerns\CreatesPersonalAccessClient;
 use Tests\TestCase;
 
 class TwoFactorAuthenticationTest extends TestCase
 {
-    use CreatesPersonalAccessClient, RefreshDatabase;
+    use RefreshDatabase;
 
     public function test_login_sends_two_factor_code_and_redirects_to_challenge(): void
     {
@@ -57,8 +56,6 @@ class TwoFactorAuthenticationTest extends TestCase
 
     public function test_user_can_confirm_with_valid_two_factor_code(): void
     {
-        $this->createPersonalAccessClient();
-
         $user = User::factory()->create();
 
         $code = 'ABC123';
@@ -72,7 +69,6 @@ class TwoFactorAuthenticationTest extends TestCase
 
         $response->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($user);
-        $response->assertSessionHas('auth.token');
     }
 
     public function test_user_cannot_confirm_with_invalid_two_factor_code(): void

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,11 +10,11 @@ Route::middleware('guest')->group(function () {
     Route::inertia('login', 'auth/Login')->name('login');
     Route::inertia('register', 'auth/Register')->name('register');
 
-    Route::post('login', [AuthController::class, 'login'])->name('login.store');
-    Route::post('register', [AuthController::class, 'register'])->name('register.store');
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login.store');
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register.store');
 
     Route::get('two-factor-challenge', [AuthController::class, 'twoFactorChallenge'])->name('two-factor.challenge');
-    Route::post('two-factor-challenge', [AuthController::class, 'confirmTwoFactor'])->name('two-factor.confirm');
+    Route::post('two-factor-challenge', [AuthController::class, 'confirmTwoFactor'])->middleware('throttle:5,1')->name('two-factor.confirm');
 });
 
 Route::middleware('auth')->group(function () {
@@ -24,6 +23,10 @@ Route::middleware('auth')->group(function () {
     Route::inertia('historico', 'Historico')->name('historico');
 
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::post('wallet/withdrawals/confirm', [WalletController::class, 'confirmWithdrawal'])
+        ->middleware('throttle:6,1')
+        ->name('wallet.withdrawals.confirm');
 
     Route::get('wallet/balance', [WalletController::class, 'balance'])->name('wallet.balance');
     Route::get('wallet/balance-history', [WalletController::class, 'balanceHistory'])->name('wallet.balance-history');
@@ -34,8 +37,5 @@ Route::middleware('auth')->group(function () {
     Route::get('wallet/recipients', [WalletController::class, 'recipients'])->name('wallet.recipients');
     Route::post('wallet/transfers', [WalletController::class, 'transfer'])->name('wallet.transfers.store');
     Route::post('wallet/withdrawals', [WalletController::class, 'requestWithdrawal'])->name('wallet.withdrawals.store');
-    Route::post('wallet/withdrawals/confirm', [WalletController::class, 'confirmWithdrawal'])->name('wallet.withdrawals.confirm');
     Route::post('wallet/reversals', [WalletController::class, 'reverse'])->name('wallet.reversals.store');
-
-    Route::apiResource('financial-statements', FinancialStatementController::class);
 });

@@ -20,9 +20,9 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): RedirectResponse
     {
-        $result = $this->authService->register($request->validated());
+        $this->authService->register($request->validated());
 
-        $request->session()->flash('auth.token', $result['token']);
+        $request->session()->regenerate();
 
         return to_route('dashboard');
     }
@@ -52,10 +52,9 @@ class AuthController extends Controller
             return to_route('login');
         }
 
-        $result = $this->authService->confirmTwoFactorCode($request->validated('code'));
+        $this->authService->confirmTwoFactorCode($request->validated('code'));
 
         $request->session()->regenerate();
-        $request->session()->flash('auth.token', $result['token']);
 
         return to_route('dashboard');
     }

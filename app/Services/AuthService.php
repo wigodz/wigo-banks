@@ -18,10 +18,7 @@ class AuthService
         private readonly UserService $userService,
     ) {}
 
-    /**
-     * @return array{user: User, token: string}
-     */
-    public function register(array $data): array
+    public function register(array $data): User
     {
         $user = $this->userService->save([
             'name' => data_get($data, 'name'),
@@ -31,10 +28,7 @@ class AuthService
 
         Auth::login($user);
 
-        return [
-            'user' => $user,
-            'token' => $user->createToken('spa')->accessToken,
-        ];
+        return $user;
     }
 
     public function login(array $credentials, bool $remember = false): void
@@ -73,7 +67,7 @@ class AuthService
         return session()->has('auth.two_factor.user_id');
     }
 
-    public function confirmTwoFactorCode(string $code): array
+    public function confirmTwoFactorCode(string $code): User
     {
         $user = User::findOrFail(session('auth.two_factor.user_id'));
         $remember = session('auth.two_factor.remember', false);
@@ -92,15 +86,13 @@ class AuthService
 
         session()->forget(['auth.two_factor.user_id', 'auth.two_factor.remember']);
 
-        return [
-            'user' => $user,
-            'token' => $user->createToken('spa')->accessToken,
-        ];
+        return $user;
     }
 
     public function logout(User $user): void
     {
-        $user->token()?->revoke();
+        // Revoga eventuais tokens de API do usuário, não apenas o da requisição.
+        $user->tokens()->each(fn ($token) => $token->revoke());
 
         Auth::guard('web')->logout();
     }

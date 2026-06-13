@@ -10,12 +10,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Tests\Concerns\CreatesPersonalAccessClient;
 use Tests\TestCase;
 
 class AuthServiceTest extends TestCase
 {
-    use CreatesPersonalAccessClient, RefreshDatabase;
+    use RefreshDatabase;
 
     public function test_login_throws_validation_exception_for_invalid_credentials(): void
     {
@@ -49,8 +48,6 @@ class AuthServiceTest extends TestCase
 
     public function test_confirm_two_factor_code_logs_in_user_and_clears_cache(): void
     {
-        $this->createPersonalAccessClient();
-
         $user = User::factory()->create();
         $code = 'ABC123';
 
@@ -62,8 +59,7 @@ class AuthServiceTest extends TestCase
 
         $result = app(AuthService::class)->confirmTwoFactorCode($code);
 
-        $this->assertSame($user->id, $result['user']->id);
-        $this->assertNotEmpty($result['token']);
+        $this->assertSame($user->id, $result->id);
         $this->assertAuthenticatedAs($user);
         $this->assertFalse(Cache::has("two-factor-code:{$user->id}"));
         $this->assertFalse(session()->has('auth.two_factor.user_id'));

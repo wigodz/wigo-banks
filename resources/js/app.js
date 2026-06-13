@@ -1,6 +1,5 @@
-import { createInertiaApp, router } from '@inertiajs/vue3';
+import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
-import { persistTokenFromPage } from '@/composables/useAuth';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
@@ -24,16 +23,6 @@ createInertiaApp({
     },
 });
 
-// This will set light / dark mode on page load...
 initializeTheme();
 
-// This will listen for flash toast data from the server...
 initializeFlashToast();
-
-// Persist the one-time OAuth token shared by the backend on each navigation...
-// (client-side only: usePage() has no props during SSR module warm-up, and
-// localStorage doesn't exist in the SSR runtime)
-if (typeof window !== 'undefined') {
-    router.on('navigate', persistTokenFromPage);
-    persistTokenFromPage();
-}

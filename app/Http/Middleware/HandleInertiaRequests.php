@@ -40,7 +40,6 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
-                'token' => $request->session()->pull('auth.token'),
             ],
         ];
     }
